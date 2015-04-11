@@ -1,24 +1,39 @@
 #!/usr/bin/env python3
+"""
+Clone a repo, keeping only the history of a whitelist of files.
+Those files are followed as far as `git log --follow` can follow them.
+The use of `--follow` also means a few extra files may be caught along the way,
+though they are usually empty.
 
+This is a one-off script for splitting the IPython repo,
+not built for re-use. It could be updated to do so.
+"""
 import os, sys, time
 import pipes
-from binascii import hexlify
 from subprocess import check_call as sh, check_output
 import shutil
 
-paths = sys.argv[2:]
-if len(paths) == 1 and os.path.exists(paths[0]):
-    fname = paths[0]
-    paths = []
-    with open(fname) as f:
-        for line in f:
-            paths.append(line.strip())
+paths = []
+for path in sys.argv[2:]:
+    if os.path.exists(path):
+        with open(path) as f:
+            for line in f:
+                paths.append(line.strip())
+    else:
+        paths.append(path)
 
-assert paths
+assert paths, "need some paths to keep"
 
 repo_dir = sys.argv[1]
 
-sh(['git', 'clone', '-b', 'master', os.path.expanduser('~/dev/ip/mine'), repo_dir])
+# some constants that should be arguments:
+src_repo = os.path.expanduser('~/dev/ip/mine')
+here = os.path.dirname(__file__)
+common_files = os.path.join(here, 'common-files')
+get_history = os.path.join(here, 'get-filename-history')
+index_filter = os.path.join(here, 'whitelist-index-filter')
+
+sh(['git', 'clone', '-b', 'master', src_repo, repo_dir])
 os.chdir(repo_dir)
 check_output(['git', 'tag', '-d'] + check_output(['git', 'tag']).decode().split())
 sh('git remote rm origin'.split())
@@ -33,7 +48,7 @@ for path in paths:
         for f in files:
             count += 1
 
-with open(os.path.expanduser('~/dev/ip/git-history/common-files')) as f:
+with open(common_files) as f:
     for line in f:
         paths.insert(0, line.strip())
         count += 1
@@ -42,7 +57,7 @@ print("Computing filename history to preserve")
 print(paths)
 tic = time.time()
 whitelist = check_output([
-    os.path.expanduser('~/dev/ip/git-history/get-filename-history')
+    get_history
     ] + paths).decode('utf8').splitlines()
 toc = time.time()
 
@@ -55,7 +70,7 @@ print("Spent %.1fs computing filename history of %i files (%i found)" % (
 print("Filtering git history")
 tic = time.time()
 index_filter_cmd = ' '.join(map(pipes.quote,
-    [os.path.expanduser('~/dev/ip/git-history/whitelist-index-filter')] + whitelist
+    [index_filter] + whitelist
 ))
 sh([
     'git', 'filter-branch', '--prune-empty', '--index-filter',
