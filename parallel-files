@@ -1,0 +1,6 @@
+examples/Parallel Computing
+docs/source/parallel
+docs/source/development/parallel_connections.rst
+docs/source/development/parallel_messages.rst
+docs/source/development/figs
+ipython_parallel

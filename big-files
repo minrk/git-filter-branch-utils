@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+
+require "rubygems"
+require "Open3"
+
+puts "listing objects"
+lines = `git rev-list --all --objects`.split(/\n/)
+
+object_map = {}
+
+lines.each do |line|
+  parts = line.split(/ /, 2)
+  if parts.length > 1
+    object_map[parts[0]] = parts[1]
+  end
+end
+
+puts "found #{object_map.length} objects"
+# hashes = object_map.each_key.to_a.slice(0,5000).join("\n")
+
+puts "sizing files"
+
+sizes = {}
+
+Open3.popen3("git cat-file --batch-check") do |stdin, stdout, stderr, wait_thr|
+  pid = wait_thr.pid # pid of the started process.
+  
+  object_map.each_pair do |hash, path|
+    stdin.puts hash
+    _, type, bytes = stdout.gets.split
+    if type == 'blob'
+      # puts "#{type} #{bytes} #{path}"
+      if not sizes.include? path
+        sizes[path] = 0
+      end
+      sizes[path] += bytes.to_i
+    end
+  end
+end
+
+sorted = sizes.sort {|a1,a2| a2[1]<=>a1[1]}
+sorted.each do |path, size|
+  puts "#{path} #{size}"
+end

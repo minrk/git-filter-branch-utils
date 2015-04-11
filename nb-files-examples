@@ -1,0 +1,18 @@
+IPython/testing/iptest.py
+IPython/testing/iptestcontroller.py
+setup.py
+setupbase.py
+docs/jsdoc_config.json
+docs/jsdoc_plugin.js
+docs/source/notebook
+examples/Notebook
+examples/Interactive Widgets
+examples/images
+examples/utils
+tools/tests/ANSI Test.ipynb
+tools/tests/CSS Reference.ipynb
+tools/tests/Confined Output.ipynb
+tools/tests/Test Output Callbacks.ipynb
+git-hooks
+Dockerfile
+jupyter_notebook

@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import os
+import sys
+from subprocess import check_output
+import logging
+
+pjoin = os.path.join
+
+logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
+
+def get_filename_history(path):
+    """Get the history of filenames, according to `git log --follow`"""
+    logger.info("Getting history for %s" % path)
+    if os.path.isdir(path):
+        paths = set()
+        for d, dirs, files in os.walk(path):
+            for name in dirs + files:
+                paths.update(get_filename_history(pjoin(d, name)))
+        return paths
+    
+    out = check_output([
+        'git', 'log', '--follow', '--oneline',
+        '--name-only', '--format=%h',
+        path]).decode('utf8')
+    
+    paths = set()
+    for line in out.splitlines()[2::3]:
+        paths.add(line.strip())
+    return paths
+
+
+if __name__ == '__main__':
+    all_paths = set()
+    for path in sys.argv[1:]:
+        all_paths.update(get_filename_history(path))
+    
+    for p in sorted(all_paths):
+        print(p)
+

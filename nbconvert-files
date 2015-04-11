@@ -1,0 +1,4 @@
+docs/source/notebook/nbconvert.rst
+examples/Notebook/Using nbconvert as a Library.ipynb
+examples/Notebook/Converting Notebooks With nbconvert.ipynb
+jupyter_nbconvert

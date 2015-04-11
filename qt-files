@@ -1,0 +1,7 @@
+examples/IPython Kernel/ipython-qtconsole.desktop
+docs/source/interactive/qtconsole.rst
+docs/source/interactive/figs/besselj.png
+docs/source/_images/qtconsole.png
+jupyter_qtconsole
+IPython/external/qt.py
+IPython/external/qt_loaders.py

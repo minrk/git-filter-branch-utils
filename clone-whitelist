@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+
+import os, sys, time
+import pipes
+from binascii import hexlify
+from subprocess import check_call as sh, check_output
+import shutil
+
+paths = sys.argv[2:]
+if len(paths) == 1 and os.path.exists(paths[0]):
+    fname = paths[0]
+    paths = []
+    with open(fname) as f:
+        for line in f:
+            paths.append(line.strip())
+
+assert paths
+
+repo_dir = sys.argv[1]
+
+sh(['git', 'clone', '-b', 'master', os.path.expanduser('~/dev/ip/mine'), repo_dir])
+os.chdir(repo_dir)
+check_output(['git', 'tag', '-d'] + check_output(['git', 'tag']).decode().split())
+sh('git remote rm origin'.split())
+print(repo_dir)
+
+# count the number of files whose history we are tracking
+count = 0
+for path in paths:
+    if not os.path.isdir(path):
+        count += 1
+    for _, __, files in os.walk(path):
+        for f in files:
+            count += 1
+
+with open(os.path.expanduser('~/dev/ip/git-history/common-files')) as f:
+    for line in f:
+        paths.insert(0, line.strip())
+        count += 1
+
+print("Computing filename history to preserve")
+print(paths)
+tic = time.time()
+whitelist = check_output([
+    os.path.expanduser('~/dev/ip/git-history/get-filename-history')
+    ] + paths).decode('utf8').splitlines()
+toc = time.time()
+
+assert whitelist
+print('\n'.join(whitelist))
+print("Spent %.1fs computing filename history of %i files (%i found)" % (
+    toc-tic, count, len(whitelist),
+))
+
+print("Filtering git history")
+tic = time.time()
+index_filter_cmd = ' '.join(map(pipes.quote,
+    [os.path.expanduser('~/dev/ip/git-history/whitelist-index-filter')] + whitelist
+))
+sh([
+    'git', 'filter-branch', '--prune-empty', '--index-filter',
+    index_filter_cmd, '--', '--all',
+], stdout=sys.stderr)
+toc = time.time()
+
+dt = toc-tic
+hrs = dt // 60
+mins = dt % 60
+print("Spent %02i:%02i running filter-branch" % (hrs, mins))
+
+# cleanup refs
+sh('git update-ref -d refs/original/refs/heads/master'.split())
+sh('git reflog expire --expire=now --all'.split())
+shutil.rmtree(".git/logs")
+
+sh('git gc --aggressive --prune=now'.split())
+
+print(repo_dir)
