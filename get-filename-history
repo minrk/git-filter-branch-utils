@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""Get the history of a collection of filenames via `git log --follow`
+
+A list of filenames is printed to stdout, one filename per line.
+"""
 
 import os
 import sys
@@ -33,6 +37,10 @@ def get_filename_history(path):
 
 if __name__ == '__main__':
     all_paths = set()
+    if not paths:
+        print(__doc__)
+        sys.exit(1)
+    
     for path in sys.argv[1:]:
         all_paths.update(get_filename_history(path))
     

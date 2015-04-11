@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""For use in `git filter-branch --index-filter`,
+
+this is an index filter that excludes all files *not* in the given whitelist.
+"""
 
 import sys
 from subprocess import check_output, check_call
@@ -9,6 +13,4 @@ to_rm = all_files.difference(whitelist)
 if to_rm:
     out = check_output(['git', 'rm', '--cache'] + list(to_rm)).decode('utf8').splitlines()
     print("Removed %i files" % len(out))
-    
-    
 

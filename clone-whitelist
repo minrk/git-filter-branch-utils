@@ -12,24 +12,33 @@ import os, sys, time
 import pipes
 from subprocess import check_call as sh, check_output
 import shutil
+import argparse
 
-paths = []
-for path in sys.argv[2:]:
-    if os.path.exists(path):
-        with open(path) as f:
-            for line in f:
-                paths.append(line.strip())
-    else:
-        paths.append(path)
+parser = argparse.ArgumentParser()
+parser.add_argument('src', type=str, help="The source repo to clone")
+parser.add_argument('dst', type=str, help="The destination of the new clone")
+parser.add_argument('--file-list', '-f', type=str, nargs='+', help="Line-delimited file(s) containing paths to track.")
+parser.add_argument('files', type=str, nargs='*',
+    help="Files whose history should be preserved. Filenames can be specified in files with --file-list.")
 
-assert paths, "need some paths to keep"
 
-repo_dir = sys.argv[1]
+opts = parser.parse_args()
+paths = opts.files or []
+for path in opts.file_list or []:
+    with open(path) as f:
+        for line in f:
+            paths.append(line.strip())
+
+assert paths, "need some paths to track"
+
+src_repo = opts.src
+repo_dir = opts.dst
+if os.path.exists(repo_dir):
+    print("destination already exists: %s" % repo_dir)
+    sys.exit(1)
 
 # some constants that should be arguments:
-src_repo = os.path.expanduser('~/dev/ip/mine')
-here = os.path.dirname(__file__)
-common_files = os.path.join(here, 'common-files')
+here = os.path.abspath(os.path.dirname(__file__))
 get_history = os.path.join(here, 'get-filename-history')
 index_filter = os.path.join(here, 'whitelist-index-filter')
 
@@ -47,11 +56,6 @@ for path in paths:
     for _, __, files in os.walk(path):
         for f in files:
             count += 1
-
-with open(common_files) as f:
-    for line in f:
-        paths.insert(0, line.strip())
-        count += 1
 
 print("Computing filename history to preserve")
 print(paths)

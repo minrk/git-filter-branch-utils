@@ -1,4 +1,7 @@
 #!/usr/bin/env ruby
+# show the blobs whose *history* is largest
+# this neglects compression, so it is effectively # of commits * average size of blob,
+# which may not be especially useful
 
 require "rubygems"
 require "Open3"
@@ -16,7 +19,6 @@ lines.each do |line|
 end
 
 puts "found #{object_map.length} objects"
-# hashes = object_map.each_key.to_a.slice(0,5000).join("\n")
 
 puts "sizing files"
 
@@ -29,7 +31,6 @@ Open3.popen3("git cat-file --batch-check") do |stdin, stdout, stderr, wait_thr|
     stdin.puts hash
     _, type, bytes = stdout.gets.split
     if type == 'blob'
-      # puts "#{type} #{bytes} #{path}"
       if not sizes.include? path
         sizes[path] = 0
       end
